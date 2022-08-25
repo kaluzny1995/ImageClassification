@@ -1,0 +1,61 @@
+{
+  "main": {
+    "path": {
+      "root": ".",
+      "data": ".data",
+      "storage": {
+        "visualizations": ".storage/vis",
+        "models": ".storage/models"
+      }
+    },
+    "random_seed": 1234,
+    "cuda_device": "cuda",
+    "non_cuda_device": "cpu",
+    "tt_split_ratio": 0.8,
+    "tv_split_ratio": 0.9,
+    "is_visualization_saved": true,
+    "is_visualization_shown": false,
+    "is_launched_in_notebook": false
+  },
+  "mlp": {
+    "name": "mlp",
+    "description": "A simple dense (fully connected) layers neural network.",
+    "utilized_dataset": "MNIST",
+    "param": {
+      "input_dim": 784,
+      "hidden_dims": [250, 100],
+      "output_dim": 10
+    },
+    "hparam": {
+      "device": "CUDA",
+      "batch_size": 64,
+      "criterion": "CE",
+      "optimizer": "ADAM",
+      "learning_rate": 0.001,
+      "epochs": 10
+    }
+  },
+  "lenet": {
+    "name": "lenet",
+    "description": "A simple convolutional (+ dense) layers neural network.",
+    "utilized_dataset": "MNIST",
+    "param": {
+      "in_channels": 1,
+      "mid_channels": 6,
+      "out_channels": 16,
+      "kernel_size": 5,
+      "pool_kernel_size": 2,
+      "input_dim": 256,
+      "hidden_dims": [120, 84],
+      "output_dim": 10
+    },
+    "hparam": {
+      "device": "CUDA",
+      "batch_size": 64,
+      "criterion": "CE",
+      "optimizer": "ADAM",
+      "learning_rate": 0.001,
+      "epochs": 20
+    }
+  }
+}
