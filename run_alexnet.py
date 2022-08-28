@@ -5,10 +5,10 @@ import numpy as np
 import random
 
 from config.main_config import MainConfig
-from config.conv_nn_config import ConvNNConfig
+from config.alexnet_config import AlexNetConfig
 from utils.visualizations import Visualization
 import utils.calculation
-from models.conv_nn import LeNet
+from models.alexnet import AlexNet
 from models.model_processor import ModelProcessor
 
 main_config = MainConfig.from_json()
@@ -21,13 +21,13 @@ torch.cuda.manual_seed(main_config.random_seed)
 torch.backends.cudnn.deterministic = True
 
 
-conv_nn_config = ConvNNConfig.from_json()
-print(f"Convolutional NN config: {conv_nn_config.to_dict()}")
+alexnet_nn_config = AlexNetConfig.from_json()
+print(f"AlexNet NN config: {alexnet_nn_config.to_dict()}")
 
 
 # Datasets
-mnist_dataset = conv_nn_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
-train_data, valid_data, test_data = mnist_dataset.get_datasets()
+cifar10_dataset = alexnet_nn_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
+train_data, valid_data, test_data = cifar10_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
 print(f'Number of validation examples: {len(valid_data)}')
 print(f'Number of testing examples: {len(test_data)}')
@@ -35,9 +35,18 @@ print(f'Number of testing examples: {len(test_data)}')
 
 # Visualizer
 visualization = Visualization(main_config.path_storage_visualization,
-                              conv_nn_config.name,
+                              alexnet_nn_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
+
+
+# Image examples
+N_EXAMPLES = 25
+images = list(map(lambda i: train_data[i][0], range(N_EXAMPLES)))
+labels = list(map(lambda i: test_data.classes[train_data[i][1]], range(N_EXAMPLES)))
+visualization.plot_images(images, labels, title="Training images sample", name="train_images")
+visualization.plot_images(utils.calculation.normalize_images(images), labels,
+                          title="Training images sample - normalized", name="train_images_normalized")
 
 
 # Convolutional filtering and pooling examples
@@ -47,77 +56,63 @@ images = list(map(lambda i: train_data[i][0], range(N_EXAMPLES)))
 conv_filter = [[-1, -2, -1],
                [0, 0, 0],
                [1, 2, 1]]
-visualization.plot_filter(*utils.calculation.get_filtered_images(images, conv_filter),
+f_images, f_filters = utils.calculation.get_filtered_images(images, conv_filter)
+visualization.plot_filter(f_images, f_filters,
                           title="Convolutionally filtered images - horizontal upper", name="filtered_images_hor_up")
+visualization.plot_filter(utils.calculation.normalize_images(f_images), utils.calculation.normalize_images(f_filters),
+                          title="Convolutionally filtered images - horizontal upper - normalized",
+                          name="filtered_images_hor_up_normalized")
 
-conv_filter = [[1, 2, 1],
-               [0, 0, 0],
-               [-1, -2, -1]]
-visualization.plot_filter(*utils.calculation.get_filtered_images(images, conv_filter),
-                          title="Convolutionally filtered images - horizontal downer", name="filtered_images_hor_down")
 
 conv_filter = [[-1, 0, 1],
                [-2, 0, 2],
                [-1, 0, 1]]
-visualization.plot_filter(*utils.calculation.get_filtered_images(images, conv_filter),
+f_images, f_filters = utils.calculation.get_filtered_images(images, conv_filter)
+visualization.plot_filter(f_images, f_filters,
                           title="Convolutionally filtered images - vertical left", name="filtered_images_ver_left")
+visualization.plot_filter(utils.calculation.normalize_images(f_images), utils.calculation.normalize_images(f_filters),
+                          title="Convolutionally filtered images - vertical left - normalized",
+                          name="filtered_images_ver_left_normalized")
 
-conv_filter = [[1, 0, -1],
-               [2, 0, -2],
-               [1, 0, -1]]
-visualization.plot_filter(*utils.calculation.get_filtered_images(images, conv_filter),
-                          title="Convolutionally filtered images - vertical right", name="filtered_images_ver_right")
-
-conv_filter = [[-2, -1, 0],
-               [-1, 0, 1],
-               [0, 1, 2]]
-visualization.plot_filter(*utils.calculation.get_filtered_images(images, conv_filter),
-                          title="Convolutionally filtered images - diagonal upper left", name="filtered_images_diag_up_left")
-
-conv_filter = [[2, 1, 0],
-               [1, 0, -1],
-               [0, -1, -2]]
-visualization.plot_filter(*utils.calculation.get_filtered_images(images, conv_filter),
-                          title="Convolutionally filtered images - diagonal downer right", name="filtered_images_diag_down_right")
-
-visualization.plot_pool(*utils.calculation.get_pooled_images(images, "max", 2),
+p_images, p_pooled = utils.calculation.get_pooled_images(images, "max", 2)
+visualization.plot_pool(p_images, p_pooled,
                         title="Pooled images - max 2", name="pooled_images_max_2")
-visualization.plot_pool(*utils.calculation.get_pooled_images(images, "max", 3),
-                        title="Pooled images - max 3", name="pooled_images_max_3")
-visualization.plot_pool(*utils.calculation.get_pooled_images(images, "mean", 2),
+visualization.plot_pool(utils.calculation.normalize_images(p_images), utils.calculation.normalize_images(p_pooled),
+                        title="Pooled images - max 2 - normalized", name="pooled_images_max_2_normalized")
+p_images, p_pooled = utils.calculation.get_pooled_images(images, "mean", 2)
+visualization.plot_pool(p_images, p_pooled,
                         title="Pooled images - mean 2", name="pooled_images_mean_2")
-visualization.plot_pool(*utils.calculation.get_pooled_images(images, "mean", 3),
-                        title="Pooled images - mean 3", name="pooled_images_mean_3")
+visualization.plot_pool(utils.calculation.normalize_images(p_images), utils.calculation.normalize_images(p_pooled),
+                        title="Pooled images - mean 2 - normalized", name="pooled_images_mean_2_normalized")
 
 
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=conv_nn_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=conv_nn_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=conv_nn_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=alexnet_nn_config.hparam_batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=alexnet_nn_config.hparam_batch_size)
+test_loader = data.DataLoader(test_data, batch_size=alexnet_nn_config.hparam_batch_size)
 
 
 # Model definition
-model = LeNet(conv_nn_config.param_in_channels,
-              conv_nn_config.param_mid_channels,
-              conv_nn_config.param_out_channels,
-              conv_nn_config.param_kernel_size,
-              conv_nn_config.param_pool_kernel_size,
-              conv_nn_config.param_input_dim,
-              conv_nn_config.param_hidden_dims,
-              conv_nn_config.param_output_dim,
-              main_config.path_storage_models,
-              conv_nn_config.name)
+model = AlexNet(alexnet_nn_config.param_ft_in_out_channels,
+                alexnet_nn_config.param_ft_kernel_size,
+                alexnet_nn_config.param_ft_pool_kernel_size,
+                alexnet_nn_config.param_ft_stride,
+                alexnet_nn_config.param_ft_padding,
+                alexnet_nn_config.param_clf_dims,
+                alexnet_nn_config.param_clf_dropout,
+                main_config.path_storage_models,
+                alexnet_nn_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
 # Model hyperparams
-optimizer = conv_nn_config.hparam_optimizer.value(model.parameters(), lr=conv_nn_config.hparam_learning_rate)
-criterion = conv_nn_config.hparam_criterion.value()
+optimizer = alexnet_nn_config.hparam_optimizer.value(model.parameters(), lr=alexnet_nn_config.hparam_learning_rate)
+criterion = alexnet_nn_config.hparam_criterion.value()
 device = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, conv_nn_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, alexnet_nn_config.hparam_epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)
@@ -156,17 +151,18 @@ visualization.plot_representations(intermediate_tsne_data, labels, n_examples=N_
 
 
 # Image imagination
-IMAGE_LABEL = 3
-best_image, best_prob = model_processor.imagine_image(IMAGE_LABEL, shape=[32, 1, 28, 28])
+IMAGE_LABEL = test_data.classes.index("frog")
+best_image, best_prob = model_processor.imagine_image(IMAGE_LABEL, shape=[256, 3, 32, 32], n_iterations=1_000)
 print(f'Best image probability: {best_prob.item()*100:.2f}%')
 visualization.plot_image(best_image,
-                         title=f"Best imagined image of digit {IMAGE_LABEL}", name=f"best_imagined_{IMAGE_LABEL}")
+                         title=f"Best imagined image {IMAGE_LABEL}", name=f"best_imagined_{IMAGE_LABEL}")
 
 
 # Image trained conv_filters
 N_EXAMPLES = 5
+N_FILTERS = 7
 images = list(map(lambda i: train_data[i][0], range(N_EXAMPLES)))
-filters = model.conv1.weight.data
+filters = model.features[0].weight.data[:N_FILTERS]
 
 visualization.plot_many_filtered_images(*utils.calculation.get_many_filtered_images(images, filters),
                                         title="Convolutionally filtered images by neural network", name="filtered_images_by_nn")

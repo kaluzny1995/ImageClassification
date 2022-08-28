@@ -57,5 +57,31 @@
       "learning_rate": 0.001,
       "epochs": 20
     }
+  },
+  "alexnet": {
+    "name": "alexnet",
+    "description": "An AlexNet convolutional neural network model.",
+    "utilized_dataset": "CIFAR10",
+    "param": {
+      "ft": {
+        "in_out_channels": [[3, 64], [64, 192], [192, 384], [384, 256], [256, 256]],
+        "kernel_size": 3,
+        "pool_kernel_size": 2,
+        "stride": 2,
+        "padding": 1
+      },
+      "clf": {
+        "dims": [[1024, 4096], [4096, 4096], [4096, 10]],
+        "dropout": 0.5
+      }
+    },
+    "hparam": {
+      "device": "CUDA",
+      "batch_size": 64,
+      "criterion": "CE",
+      "optimizer": "ADAM",
+      "learning_rate": 0.001,
+      "epochs": 25
+    }
   }
 }

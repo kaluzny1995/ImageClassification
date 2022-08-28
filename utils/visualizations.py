@@ -3,6 +3,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from sklearn import metrics
 
+import utils.calculation
 from utils.util import create_dir_if_not_exists
 
 
@@ -42,7 +43,7 @@ class Visualization:
         fig = plt.figure()
         fig.suptitle(title)
         ax = fig.add_subplot(111)
-        ax.imshow(image.cpu().numpy(), cmap='bone')
+        ax.imshow(image.permute(1, 2, 0).cpu().numpy(), cmap='bone')
         ax.axis('off')
 
         if self.is_saved:
@@ -50,11 +51,13 @@ class Visualization:
         if self.is_shown:
             plt.show()
 
-    def plot_images(self, images, **config):
+    def plot_images(self, images, labels=None, **config):
         """
         Sample of images visualization
         :param images: Sample of images
         :type images: List[tensor[float]]
+        :param labels: Image labels (image class names)
+        :type labels: List[str] | type(None)
         """
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Sample of images")
@@ -64,11 +67,13 @@ class Visualization:
         rows = int(np.sqrt(n_images))
         cols = int(np.sqrt(n_images))
 
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10, 10))
         fig.suptitle(title)
         for i in range(rows * cols):
             ax = fig.add_subplot(rows, cols, i + 1)
-            ax.imshow(images[i].view(images[i].size()[1:]).cpu().numpy(), cmap="bone")
+            ax.imshow(images[i].permute(1, 2, 0).cpu().numpy(), cmap="bone")
+            if labels is not None:
+                ax.set_title(labels[i])
             ax.axis("off")
 
         if self.is_saved:
@@ -94,12 +99,12 @@ class Visualization:
         fig.suptitle(title)
         for i in range(n_images):
             ax = fig.add_subplot(2, n_images, i + 1)
-            ax.imshow(images[i].squeeze(0), cmap='bone')
+            ax.imshow(images[i].permute(1, 2, 0), cmap='bone')
             ax.set_title('Original')
             ax.axis('off')
 
             ax = fig.add_subplot(2, n_images, n_images + i + 1)
-            ax.imshow(filtered_images[i].squeeze(0), cmap='bone')
+            ax.imshow(filtered_images[i].permute(1, 2, 0), cmap='bone')
             ax.set_title('Filtered')
             ax.axis('off')
 
@@ -126,14 +131,12 @@ class Visualization:
         fig.suptitle(title)
         for i in range(n_images):
             ax = fig.add_subplot(2, n_images, i + 1)
-            ax.imshow(images[i].squeeze(0), cmap='bone')
+            ax.imshow(images[i].permute(1, 2, 0), cmap='bone')
             ax.set_title('Original')
             ax.axis('off')
 
-            image = pooled_images[i].squeeze(0)
-
             ax = fig.add_subplot(2, n_images, n_images + i + 1)
-            ax.imshow(image, cmap='bone')
+            ax.imshow(pooled_images[i].permute(1, 2, 0), cmap='bone')
             ax.set_title('Pooled')
             ax.axis('off')
 
@@ -181,14 +184,14 @@ class Visualization:
         rows = int(np.sqrt(n_images))
         cols = int(np.sqrt(n_images))
 
-        fig = plt.figure(figsize=(20, 10))
+        fig = plt.figure(figsize=(25, 20))
         fig.suptitle(title)
         for i in range(rows * cols):
             ax = fig.add_subplot(rows, cols, i + 1)
             image, true_label, probs = incorrect[i]
             true_prob = probs[true_label]
             incorrect_prob, incorrect_label = probs.max(dim=0)
-            ax.imshow(image.view(image.size()[1:]).cpu().numpy(), cmap='bone')
+            ax.imshow(image.permute(1, 2, 0).cpu().numpy(), cmap='bone')
             ax.set_title(f'true label: {true_label} ({true_prob:.3f})\n'
                          f'pred label: {incorrect_label} ({incorrect_prob:.3f})')
             ax.axis('off')
@@ -275,7 +278,7 @@ class Visualization:
         for i in range(n_images):
 
             ax = fig.add_subplot(n_images, n_filters + 1, i + 1 + (i * n_filters))
-            ax.imshow(images[i].squeeze(0), cmap='bone')
+            ax.imshow(images[i].permute(1, 2, 0), cmap='bone')
             ax.set_title('Original')
             ax.axis('off')
 
@@ -308,7 +311,7 @@ class Visualization:
         fig.suptitle(title)
         for i in range(n_filters):
             ax = fig.add_subplot(1, n_filters, i + 1)
-            ax.imshow(conv_filters[i].squeeze(0), cmap='bone')
+            ax.imshow(conv_filters[i].permute(1, 2, 0), cmap='bone')
             ax.axis('off')
 
         if self.is_saved:

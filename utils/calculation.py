@@ -4,9 +4,22 @@ import torch
 import torch.nn.functional as F
 
 
+def normalize_images(images):
+    def normalize(image):
+        image_min = image.min()
+        image_max = image.max()
+        image.clamp_(min=image_min, max=image_max)
+        image.add_(-image_min).div_(image_max - image_min + 1e-5)
+        return image
+
+    return torch.stack(list(map(lambda i: normalize(i), images)))
+
+
 def get_filtered_images(images, conv_filter):
     images = torch.cat([i.unsqueeze(0) for i in images], dim=0).cpu()
     conv_filter = torch.FloatTensor(conv_filter).unsqueeze(0).unsqueeze(0).cpu()
+    # adjust filter to number of image channels (1 for gray, 3 for RGB, etc.)
+    conv_filter = conv_filter.repeat(1, images.size()[-3], 1, 1)
     filtered_images = F.conv2d(images, conv_filter)
     return images, filtered_images
 
@@ -40,7 +53,6 @@ def get_most_incorrect_examples(images, labels, probs):
     incorrect_examples = filter(lambda x: not x[-1], zip(images, labels, probs, corrects))
     incorrect_examples = list(map(lambda x: x[:-1], incorrect_examples))
     incorrect_examples.sort(reverse=True, key=lambda x: x[2].max(dim=0).values)
-
     return incorrect_examples
 
 

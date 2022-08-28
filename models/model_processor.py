@@ -140,23 +140,23 @@ class ModelProcessor:
 
         return outputs, intermediates, labels
 
-    def imagine_digit(self, digit, shape, n_iterations=50_000):
+    def imagine_image(self, image_label, shape, n_iterations=50_000):
         self.model.eval()
 
         best_prob = 0
         best_image = None
 
         with torch.no_grad():
-            for _ in self.tqdm_function(range(n_iterations), desc="Digit imagining", leave=False):
+            for _ in self.tqdm_function(range(n_iterations), desc="Image imagining", leave=False):
                 x = torch.randn(shape).to(self.device)
 
                 y_pred, _ = self.model(x)
 
                 preds = F.softmax(y_pred, dim=-1)
-                _best_prob, index = torch.max(preds[:, digit], dim=0)
+                _best_prob, index = torch.max(preds[:, image_label], dim=0)
 
                 if _best_prob > best_prob:
                     best_prob = _best_prob
                     best_image = x[index]
 
-        return best_image.view(shape[-2:]), best_prob
+        return best_image, best_prob

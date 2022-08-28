@@ -109,10 +109,11 @@ visualization.plot_representations(intermediate_tsne_data, labels, n_examples=N_
 
 
 # Image imagination
-DIGIT = 3
-best_image, best_prob = model_processor.imagine_digit(DIGIT, shape=[32, 28, 28])
+IMAGE_LABEL = 3
+best_image, best_prob = model_processor.imagine_image(IMAGE_LABEL, shape=[32, 28, 28])
 print(f'Best image probability: {best_prob.item()*100:.2f}%')
-visualization.plot_image(best_image, title=f"Best imagined image of digit {DIGIT}", name=f"best_imagined_{DIGIT}")
+visualization.plot_image(best_image.unsqueeze(0),
+                         title=f"Best imagined image of digit {IMAGE_LABEL}", name=f"best_imagined_{IMAGE_LABEL}")
 
 
 # Model weights
