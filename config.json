@@ -62,6 +62,14 @@
     "name": "alexnet",
     "description": "An AlexNet convolutional neural network model.",
     "utilized_dataset": "CIFAR10",
+    "lrf": {
+      "device": "CUDA",
+      "criterion": "CE",
+      "optimizer": "ADAM",
+      "start_lr": 1e-7,
+      "end_lr": 10,
+      "num_iter": 100
+    },
     "param": {
       "ft": {
         "in_out_channels": [[3, 64], [64, 192], [192, 384], [384, 256], [256, 256]],

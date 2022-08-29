@@ -145,6 +145,43 @@ class Visualization:
         if self.is_shown:
             plt.show()
 
+    def plot_lr_finder(self, lrs, losses, skip_start=5, skip_end=5, **config):
+        """
+        Optimal learning rate finding visualization
+        :param lrs: List of examined learning rates
+        :type lrs: List[float]
+        :param losses: List of observed losses
+        :type losses: List[float]
+        :param skip_start: Offset from start
+        :type skip_start: int
+        :param skip_end: Offset from end
+        :type skip_end: int
+        """
+        mpl.rcParams.update(mpl.rcParamsDefault)
+        title = config.get("title", "Optimal learning rate finding")
+        name = config.get("name", "optimal_lr_finding")
+
+        if skip_end == 0:
+            lrs = lrs[skip_start:]
+            losses = losses[skip_start:]
+        else:
+            lrs = lrs[skip_start:-skip_end]
+            losses = losses[skip_start:-skip_end]
+
+        fig = plt.figure(figsize=(16, 8))
+        fig.suptitle(title)
+        ax = fig.add_subplot(1, 1, 1)
+        ax.plot(lrs, losses)
+        ax.set_xscale('log')
+        ax.set_xlabel('Learning rate')
+        ax.set_ylabel('Loss')
+        ax.grid(True, 'both', 'x')
+
+        if self.is_saved:
+            plt.savefig(self.__get_image_path(name))
+        if self.is_shown:
+            plt.show()
+
     def plot_confusion_matrix(self, labels, pred_labels, **config):
         """
         Confusion matrix visualization
@@ -180,6 +217,7 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Most incorrect classifications")
         name = config.get("name", "most_incorrect")
+        class_names = config.get("class_names", None)
 
         rows = int(np.sqrt(n_images))
         cols = int(np.sqrt(n_images))
@@ -191,6 +229,9 @@ class Visualization:
             image, true_label, probs = incorrect[i]
             true_prob = probs[true_label]
             incorrect_prob, incorrect_label = probs.max(dim=0)
+            if class_names is not None:
+                true_label = class_names[true_label]
+                incorrect_label = class_names[incorrect_label]
             ax.imshow(image.permute(1, 2, 0).cpu().numpy(), cmap='bone')
             ax.set_title(f'true label: {true_label} ({true_prob:.3f})\n'
                          f'pred label: {incorrect_label} ({incorrect_prob:.3f})')

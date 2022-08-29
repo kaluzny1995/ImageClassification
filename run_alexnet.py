@@ -1,8 +1,10 @@
 import torch
 import torch.utils.data as data
+import torchvision
 
 import numpy as np
 import random
+import copy
 
 from config.main_config import MainConfig
 from config.alexnet_config import AlexNetConfig
@@ -10,6 +12,7 @@ from utils.visualizations import Visualization
 import utils.calculation
 from models.alexnet import AlexNet
 from models.model_processor import ModelProcessor
+from utils.lr_finder import LRFinder
 
 main_config = MainConfig.from_json()
 print(f"Main config: {main_config.to_dict()}")
@@ -104,6 +107,25 @@ model = AlexNet(alexnet_nn_config.param_ft_in_out_channels,
                 alexnet_nn_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
+
+# Optimal learning rate finding
+model_for_lrf = copy.deepcopy(model)
+
+optimizer_for_lrf = alexnet_nn_config.lrf_optimizer.value(model_for_lrf.parameters(), lr=alexnet_nn_config.lrf_start_lr)
+criterion_for_lrf = alexnet_nn_config.lrf_criterion.value()
+device_for_lrf = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
+model_for_lrf = model_for_lrf.to(device_for_lrf)
+criterion_for_lrf = criterion_for_lrf.to(device_for_lrf)
+
+lr_finder = LRFinder(model_for_lrf, optimizer_for_lrf, criterion_for_lrf, device_for_lrf,
+                     main_config.path_storage_models, alexnet_nn_config.name)
+lrs, losses = lr_finder.range_test(train_loader,
+                                   end_lr=alexnet_nn_config.lrf_end_lr,
+                                   num_iter=alexnet_nn_config.lrf_num_iter)
+
+visualization.plot_lr_finder(lrs, losses)
+
+
 # Model hyperparams
 optimizer = alexnet_nn_config.hparam_optimizer.value(model.parameters(), lr=alexnet_nn_config.hparam_learning_rate)
 criterion = alexnet_nn_config.hparam_criterion.value()
@@ -125,8 +147,9 @@ visualization.plot_confusion_matrix(labels, pred_labels,
 
 # Most incorrect classifications
 N_EXAMPLES = 25
-incorrect_examples = utils.calculation.get_most_incorrect_examples(images, labels, probs)
-visualization.plot_most_incorrect(incorrect_examples, N_EXAMPLES,
+incorrect_examples = utils.calculation.get_most_incorrect_examples(utils.calculation.normalize_images(images),
+                                                                   labels, probs)
+visualization.plot_most_incorrect(incorrect_examples, N_EXAMPLES, class_names=test_data.classes,
                                   title="Most incorrect classifications", name="most_incorrect")
 
 # Layer representations
@@ -151,17 +174,19 @@ visualization.plot_representations(intermediate_tsne_data, labels, n_examples=N_
 
 
 # Image imagination
-IMAGE_LABEL = test_data.classes.index("frog")
-best_image, best_prob = model_processor.imagine_image(IMAGE_LABEL, shape=[256, 3, 32, 32], n_iterations=1_000)
-print(f'Best image probability: {best_prob.item()*100:.2f}%')
+IMAGE_LABEL = "frog"
+best_image, best_prob = model_processor.imagine_image(test_data.classes.index(IMAGE_LABEL),
+                                                      shape=[256, 3, 32, 32], n_iterations=10_000)
+print(f"Best image probability: {best_prob.item()*100:.2f}%")
+best_image = utils.calculation.normalize_images(best_image.unsqueeze(0)).squeeze(0)
 visualization.plot_image(best_image,
-                         title=f"Best imagined image {IMAGE_LABEL}", name=f"best_imagined_{IMAGE_LABEL}")
+                         title=f"Best imagined image for label {IMAGE_LABEL}", name=f"best_imagined_{IMAGE_LABEL}")
 
 
 # Image trained conv_filters
 N_EXAMPLES = 5
 N_FILTERS = 7
-images = list(map(lambda i: train_data[i][0], range(N_EXAMPLES)))
+images = utils.calculation.normalize_images(list(map(lambda i: train_data[i][0], range(N_EXAMPLES))))
 filters = model.features[0].weight.data[:N_FILTERS]
 
 visualization.plot_many_filtered_images(*utils.calculation.get_many_filtered_images(images, filters),
@@ -169,3 +194,8 @@ visualization.plot_many_filtered_images(*utils.calculation.get_many_filtered_ima
 visualization.plot_many_filtered_images(*utils.calculation.get_many_filtered_images(best_image.unsqueeze(0), filters),
                                         title="Convolutionally filtered best image by neural network", name="filtered_best_image_by_nn")
 visualization.plot_filters(filters, title="Trained convolutional filters", name="trained_filters")
+
+
+# Pretrained AlexNet model
+filters = torchvision.models.alexnet(pretrained=True).features[0].weight.data[:N_FILTERS]
+visualization.plot_filters(filters, title="Pretrained model convolutional filters", name="pretrained_filters")

@@ -66,12 +66,23 @@ class AlexNet(nn.Module):
             nn.Linear(*self.dims[2]),
         )
 
+        self.apply(AlexNet.__init_params)
+
         self.save_path = save_path
         self.model_name = model_name
         create_dir_if_not_exists(f"{self.save_path}/{self.model_name}")
 
     def __get_model_path(self, name):
         return f"{self.save_path}/{self.model_name}/{name}.pt"
+
+    @staticmethod
+    def __init_params(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight.data, nonlinearity='relu')
+            nn.init.constant_(m.bias.data, 0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight.data, gain=nn.init.calculate_gain('relu'))
+            nn.init.constant_(m.bias.data, 0)
 
     def forward(self, x):
         x = self.features(x)
