@@ -5,10 +5,10 @@ import numpy as np
 import random
 
 from config.main_config import MainConfig
-from config.conv_nn_config import ConvNNConfig
+from config.lenet_config import LeNetConfig
 from utils.visualizations import Visualization
 import utils.calculation
-from models.conv_nn import LeNet
+from models.lenet import LeNet
 from models.model_processor import ModelProcessor
 
 main_config = MainConfig.from_json()
@@ -21,12 +21,12 @@ torch.cuda.manual_seed(main_config.random_seed)
 torch.backends.cudnn.deterministic = True
 
 
-conv_nn_config = ConvNNConfig.from_json()
-print(f"Convolutional NN config: {conv_nn_config.to_dict()}")
+lenet_config = LeNetConfig.from_json()
+print(f"LeNet NN config: {lenet_config.to_dict()}")
 
 
 # Datasets
-mnist_dataset = conv_nn_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
+mnist_dataset = lenet_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
 train_data, valid_data, test_data = mnist_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
 print(f'Number of validation examples: {len(valid_data)}')
@@ -35,7 +35,7 @@ print(f'Number of testing examples: {len(test_data)}')
 
 # Visualizer
 visualization = Visualization(main_config.path_storage_visualization,
-                              conv_nn_config.name,
+                              lenet_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
 
@@ -91,33 +91,33 @@ visualization.plot_pool(*utils.calculation.get_pooled_images(images, "mean", 3),
 
 
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=conv_nn_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=conv_nn_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=conv_nn_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=lenet_config.hparam_batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=lenet_config.hparam_batch_size)
+test_loader = data.DataLoader(test_data, batch_size=lenet_config.hparam_batch_size)
 
 
 # Model definition
-model = LeNet(conv_nn_config.param_in_channels,
-              conv_nn_config.param_mid_channels,
-              conv_nn_config.param_out_channels,
-              conv_nn_config.param_kernel_size,
-              conv_nn_config.param_pool_kernel_size,
-              conv_nn_config.param_input_dim,
-              conv_nn_config.param_hidden_dims,
-              conv_nn_config.param_output_dim,
+model = LeNet(lenet_config.param_in_channels,
+              lenet_config.param_mid_channels,
+              lenet_config.param_out_channels,
+              lenet_config.param_kernel_size,
+              lenet_config.param_pool_kernel_size,
+              lenet_config.param_input_dim,
+              lenet_config.param_hidden_dims,
+              lenet_config.param_output_dim,
               main_config.path_storage_models,
-              conv_nn_config.name)
+              lenet_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
 # Model hyperparams
-optimizer = conv_nn_config.hparam_optimizer.value(model.parameters(), lr=conv_nn_config.hparam_learning_rate)
-criterion = conv_nn_config.hparam_criterion.value()
+optimizer = lenet_config.hparam_optimizer.value(model.parameters(), lr=lenet_config.hparam_learning_rate)
+criterion = lenet_config.hparam_criterion.value()
 device = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, conv_nn_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, lenet_config.hparam_epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)

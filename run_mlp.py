@@ -5,10 +5,10 @@ import numpy as np
 import random
 
 from config.main_config import MainConfig
-from config.dense_nn_config import DenseNNConfig
+from config.mlp_config import MLPConfig
 from utils.visualizations import Visualization
 import utils.calculation
-from models.dense_nn import MLP
+from models.mlp import MLP
 from models.model_processor import ModelProcessor
 
 main_config = MainConfig.from_json()
@@ -21,12 +21,12 @@ torch.cuda.manual_seed(main_config.random_seed)
 torch.backends.cudnn.deterministic = True
 
 
-dense_nn_config = DenseNNConfig.from_json()
-print(f"Dense NN config: {dense_nn_config.to_dict()}")
+mlp_config = MLPConfig.from_json()
+print(f"MLP NN config: {mlp_config.to_dict()}")
 
 
 # Datasets
-mnist_dataset = dense_nn_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
+mnist_dataset = mlp_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
 train_data, valid_data, test_data = mnist_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
 print(f'Number of validation examples: {len(valid_data)}')
@@ -34,7 +34,7 @@ print(f'Number of testing examples: {len(test_data)}')
 
 # Visualizer
 visualization = Visualization(main_config.path_storage_visualization,
-                              dense_nn_config.name,
+                              mlp_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
 
@@ -49,28 +49,28 @@ visualization.plot_images(images, title="Validation images sample", name="valid_
 
 
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=dense_nn_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=dense_nn_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=dense_nn_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=mlp_config.hparam_batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=mlp_config.hparam_batch_size)
+test_loader = data.DataLoader(test_data, batch_size=mlp_config.hparam_batch_size)
 
 
 # Model definition
-model = MLP(dense_nn_config.param_input_dim,
-            dense_nn_config.param_hidden_dims,
-            dense_nn_config.param_output_dim,
+model = MLP(mlp_config.param_input_dim,
+            mlp_config.param_hidden_dims,
+            mlp_config.param_output_dim,
             main_config.path_storage_models,
-            dense_nn_config.name)
+            mlp_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
 # Model hyperparams
-optimizer = dense_nn_config.hparam_optimizer.value(model.parameters(), lr=dense_nn_config.hparam_learning_rate)
-criterion = dense_nn_config.hparam_criterion.value()
+optimizer = mlp_config.hparam_optimizer.value(model.parameters(), lr=mlp_config.hparam_learning_rate)
+criterion = mlp_config.hparam_criterion.value()
 device = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, dense_nn_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, mlp_config.hparam_epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)

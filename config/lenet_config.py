@@ -6,7 +6,7 @@ from models.e_criterion import ECriterion
 from models.e_optimizer import EOptimizer
 
 
-class ConvNNConfig:
+class LeNetConfig:
     def __init__(self, name, description, utilized_dataset,
                  param_in_channels, param_mid_channels, param_out_channels,
                  param_kernel_size, param_pool_kernel_size,
@@ -14,7 +14,7 @@ class ConvNNConfig:
                  hparam_device, hparam_batch_size, hparam_criterion,
                  hparam_optimizer, hparam_learning_rate, hparam_epochs):
         """
-        Convolutional NN configuration
+        LeNet NN configuration
         :param name: Name of the model
         :type name: str
         :param description: Model description
@@ -75,23 +75,23 @@ class ConvNNConfig:
         nn_meta_dict = config_dict['lenet']
         nn_param_dict = nn_meta_dict['param']
         nn_hparam_dict = nn_meta_dict['hparam']
-        return ConvNNConfig(nn_meta_dict['name'],
-                            nn_meta_dict['description'],
-                            EDataset[nn_meta_dict['utilized_dataset']],
-                            nn_param_dict['in_channels'],
-                            nn_param_dict['mid_channels'],
-                            nn_param_dict['out_channels'],
-                            nn_param_dict['kernel_size'],
-                            nn_param_dict['pool_kernel_size'],
-                            nn_param_dict['input_dim'],
-                            nn_param_dict['hidden_dims'],
-                            nn_param_dict['output_dim'],
-                            EDeviceType[nn_hparam_dict['device']],
-                            nn_hparam_dict['batch_size'],
-                            ECriterion[nn_hparam_dict['criterion']],
-                            EOptimizer[nn_hparam_dict['optimizer']],
-                            nn_hparam_dict['learning_rate'],
-                            nn_hparam_dict['epochs'])
+        return LeNetConfig(nn_meta_dict['name'],
+                           nn_meta_dict['description'],
+                           EDataset[nn_meta_dict['utilized_dataset']],
+                           nn_param_dict['in_channels'],
+                           nn_param_dict['mid_channels'],
+                           nn_param_dict['out_channels'],
+                           nn_param_dict['kernel_size'],
+                           nn_param_dict['pool_kernel_size'],
+                           nn_param_dict['input_dim'],
+                           nn_param_dict['hidden_dims'],
+                           nn_param_dict['output_dim'],
+                           EDeviceType[nn_hparam_dict['device']],
+                           nn_hparam_dict['batch_size'],
+                           ECriterion[nn_hparam_dict['criterion']],
+                           EOptimizer[nn_hparam_dict['optimizer']],
+                           nn_hparam_dict['learning_rate'],
+                           nn_hparam_dict['epochs'])
 
     def to_dict(self):
         """ Returns dictionary of config parameters """
