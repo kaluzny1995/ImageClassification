@@ -7,14 +7,12 @@ import random
 import copy
 
 from config.main_config import MainConfig
-from config.alexnet_config import AlexNetConfig
+from config.vgg_config import VGGConfig
 from utils.visualizations import Visualization
 import utils.calculation
-from models.alexnet import AlexNet
+from models.vgg import VGG
 from models.model_processor import ModelProcessor
 from utils.lr_finder import LRFinder
-
-from models.dict_pretrained_model import pretrained_models_dict
 
 main_config = MainConfig.from_json()
 print(f"Main config: {main_config.to_dict()}")
@@ -26,12 +24,21 @@ torch.cuda.manual_seed(main_config.random_seed)
 torch.backends.cudnn.deterministic = True
 
 
-alexnet_nn_config = AlexNetConfig.from_json()
-print(f"AlexNet NN config: {alexnet_nn_config.to_dict()}")
+vgg_nn_config = VGGConfig.from_json()
+print(f"VGG NN config: {vgg_nn_config.to_dict()}")
 
 
 # Datasets
-cifar10_dataset = alexnet_nn_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
+cifar10_dataset = vgg_nn_config.utilized_dataset.value(
+    main_config.path_data, main_config.tv_split_ratio,
+    are_parameters_calculated=False,
+    ds_param_random_rotation=vgg_nn_config.ds_param_random_rotation,
+    ds_param_random_horizontal_flip=vgg_nn_config.ds_param_random_horizontal_flip,
+    ds_param_crop_size=vgg_nn_config.ds_param_crop_size,
+    ds_param_crop_padding=vgg_nn_config.ds_param_crop_padding,
+    ds_param_means=vgg_nn_config.ds_param_means,
+    ds_param_stds=vgg_nn_config.ds_param_stds
+)
 train_data, valid_data, test_data = cifar10_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
 print(f'Number of validation examples: {len(valid_data)}')
@@ -40,7 +47,7 @@ print(f'Number of testing examples: {len(test_data)}')
 
 # Visualizer
 visualization = Visualization(main_config.path_storage_visualization,
-                              alexnet_nn_config.name,
+                              vgg_nn_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
 
@@ -54,69 +61,34 @@ visualization.plot_images(utils.calculation.normalize_images(images), labels,
                           title="Training images sample - normalized", name="train_images_normalized")
 
 
-# Convolutional filtering and pooling examples
-N_EXAMPLES = 5
-images = list(map(lambda i: train_data[i][0], range(N_EXAMPLES)))
-
-conv_filter = [[-1, -2, -1],
-               [0, 0, 0],
-               [1, 2, 1]]
-f_images, f_filters = utils.calculation.get_filtered_images(images, conv_filter)
-visualization.plot_filter(f_images, f_filters,
-                          title="Convolutionally filtered images - horizontal upper", name="filtered_images_hor_up")
-visualization.plot_filter(utils.calculation.normalize_images(f_images), utils.calculation.normalize_images(f_filters),
-                          title="Convolutionally filtered images - horizontal upper - normalized",
-                          name="filtered_images_hor_up_normalized")
-
-
-conv_filter = [[-1, 0, 1],
-               [-2, 0, 2],
-               [-1, 0, 1]]
-f_images, f_filters = utils.calculation.get_filtered_images(images, conv_filter)
-visualization.plot_filter(f_images, f_filters,
-                          title="Convolutionally filtered images - vertical left", name="filtered_images_ver_left")
-visualization.plot_filter(utils.calculation.normalize_images(f_images), utils.calculation.normalize_images(f_filters),
-                          title="Convolutionally filtered images - vertical left - normalized",
-                          name="filtered_images_ver_left_normalized")
-
-p_images, p_pooled = utils.calculation.get_pooled_images(images, "max", 2)
-visualization.plot_pool(p_images, p_pooled,
-                        title="Pooled images - max 2", name="pooled_images_max_2")
-visualization.plot_pool(utils.calculation.normalize_images(p_images), utils.calculation.normalize_images(p_pooled),
-                        title="Pooled images - max 2 - normalized", name="pooled_images_max_2_normalized")
-p_images, p_pooled = utils.calculation.get_pooled_images(images, "mean", 2)
-visualization.plot_pool(p_images, p_pooled,
-                        title="Pooled images - mean 2", name="pooled_images_mean_2")
-visualization.plot_pool(utils.calculation.normalize_images(p_images), utils.calculation.normalize_images(p_pooled),
-                        title="Pooled images - mean 2 - normalized", name="pooled_images_mean_2_normalized")
-
-
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=alexnet_nn_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=alexnet_nn_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=alexnet_nn_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=vgg_nn_config.hparam_batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=vgg_nn_config.hparam_batch_size)
+test_loader = data.DataLoader(test_data, batch_size=vgg_nn_config.hparam_batch_size)
 
 
 # Model definition
-model = AlexNet(alexnet_nn_config.param_ft_in_out_channels,
-                alexnet_nn_config.param_ft_kernel_size,
-                alexnet_nn_config.param_ft_pool_kernel_size,
-                alexnet_nn_config.param_ft_stride,
-                alexnet_nn_config.param_ft_padding,
-                alexnet_nn_config.param_clf_dims,
-                alexnet_nn_config.param_clf_dropout,
-                main_config.path_storage_models,
-                alexnet_nn_config.name)
+model = VGG(vgg_nn_config.param_preset,
+            vgg_nn_config.param_ft_in_channels,
+            vgg_nn_config.param_ft_kernel_size,
+            vgg_nn_config.param_ft_pool_kernel_size,
+            vgg_nn_config.param_ft_padding,
+            vgg_nn_config.param_ft_is_batchnorm_used,
+            vgg_nn_config.param_avg_pool_size,
+            vgg_nn_config.param_clf_dims,
+            vgg_nn_config.param_clf_dropout,
+            main_config.path_storage_models,
+            vgg_nn_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
 
 # Optimal learning rate finding
 model_for_lrf = copy.deepcopy(model)
 
-optimizer_for_lrf = alexnet_nn_config.lrf_optimizer.value(model_for_lrf.parameters(), lr=alexnet_nn_config.lrf_start_lr)
-criterion_for_lrf = alexnet_nn_config.lrf_criterion.value()
-if alexnet_nn_config.lrf_device is not None:
-    device_for_lrf = alexnet_nn_config.lrf_device.value
+optimizer_for_lrf = vgg_nn_config.lrf_optimizer.value(model_for_lrf.parameters(), lr=vgg_nn_config.lrf_start_lr)
+criterion_for_lrf = vgg_nn_config.lrf_criterion.value()
+if vgg_nn_config.lrf_device is not None:
+    device_for_lrf = vgg_nn_config.lrf_device.value
 else:
     device_for_lrf = torch.device(main_config.cuda_device.value
                                   if torch.cuda.is_available() else main_config.non_cuda_device.value)
@@ -124,19 +96,19 @@ model_for_lrf = model_for_lrf.to(device_for_lrf)
 criterion_for_lrf = criterion_for_lrf.to(device_for_lrf)
 
 lr_finder = LRFinder(model_for_lrf, optimizer_for_lrf, criterion_for_lrf, device_for_lrf,
-                     main_config.path_storage_models, alexnet_nn_config.name)
+                     main_config.path_storage_models, vgg_nn_config.name)
 lrs, losses = lr_finder.range_test(train_loader,
-                                   end_lr=alexnet_nn_config.lrf_end_lr,
-                                   num_iter=alexnet_nn_config.lrf_num_iter)
+                                   end_lr=vgg_nn_config.lrf_end_lr,
+                                   num_iter=vgg_nn_config.lrf_num_iter)
 
-visualization.plot_lr_finder(lrs, losses)
+visualization.plot_lr_finder(lrs, losses, skip_start=10, skip_end=20)
 
 
 # Model hyperparams
-optimizer = alexnet_nn_config.hparam_optimizer.value(model.parameters(), lr=alexnet_nn_config.hparam_learning_rate)
-criterion = alexnet_nn_config.hparam_criterion.value()
-if alexnet_nn_config.lrf_device is not None:
-    device = alexnet_nn_config.lrf_device.value
+optimizer = vgg_nn_config.hparam_optimizer.value(model.parameters(), lr=vgg_nn_config.hparam_learning_rate)
+criterion = vgg_nn_config.hparam_criterion.value()
+if vgg_nn_config.hparam_device is not None:
+    device = vgg_nn_config.hparam_device.value
 else:
     device = torch.device(main_config.cuda_device.value
                           if torch.cuda.is_available() else main_config.non_cuda_device.value)
@@ -144,7 +116,7 @@ model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, alexnet_nn_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, vgg_nn_config.hparam_epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)
@@ -204,8 +176,3 @@ visualization.plot_many_filtered_images(*utils.calculation.get_many_filtered_ima
 visualization.plot_many_filtered_images(*utils.calculation.get_many_filtered_images(best_image.unsqueeze(0), filters),
                                         title="Convolutionally filtered best image by neural network", name="filtered_best_image_by_nn")
 visualization.plot_filters(filters, title="Trained convolutional filters", name="trained_filters")
-
-
-# Pretrained AlexNet model
-filters = pretrained_models_dict[alexnet_nn_config.name](pretrained=True).features[0].weight.data[:N_FILTERS]
-visualization.plot_filters(filters, title="Pretrained model convolutional filters", name="pretrained_filters")

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from utils.util import create_dir_if_not_exists
 
@@ -63,7 +62,7 @@ class AlexNet(nn.Module):
             nn.Dropout(self.dropout),
             nn.Linear(*self.dims[1]),
             nn.ReLU(inplace=True),
-            nn.Linear(*self.dims[2]),
+            nn.Linear(*self.dims[-1]),
         )
 
         self.apply(AlexNet.__init_params)

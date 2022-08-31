@@ -22,7 +22,7 @@ class AlexNetConfig:
         :param utilized_dataset: Dataset for model training and testing
         :type utilized_dataset: EDataset
         :param lrf_device: Used device type for lr finding
-        :type lrf_device: EDeviceType
+        :type lrf_device: EDeviceType | type(None)
         :param lrf_criterion: Criterion (loss) function for lr finding
         :type lrf_criterion: ECriterion
         :param lrf_optimizer: Optimizer function for lr finding
@@ -48,7 +48,7 @@ class AlexNetConfig:
         :param param_clf_dropout: Dense layers dropout
         :type param_clf_dropout: float
         :param hparam_device: Used device type
-        :type hparam_device: EDeviceType
+        :type hparam_device: EDeviceType | type(None)
         :param hparam_batch_size: Size of the data batches
         :type hparam_batch_size: int
         :param hparam_criterion: Criterion (loss) function
@@ -95,7 +95,7 @@ class AlexNetConfig:
         return AlexNetConfig(nn_meta_dict['name'],
                              nn_meta_dict['description'],
                              EDataset[nn_meta_dict['utilized_dataset']],
-                             EDeviceType[nn_lrf_dict['device']],
+                             EDeviceType[nn_lrf_dict['device']] if nn_lrf_dict['device'] is not None else None,
                              ECriterion[nn_lrf_dict['criterion']],
                              EOptimizer[nn_lrf_dict['optimizer']],
                              nn_lrf_dict['start_lr'],
@@ -108,7 +108,7 @@ class AlexNetConfig:
                              nn_param_ft_dict['padding'],
                              nn_param_clf_dict['dims'],
                              nn_param_clf_dict['dropout'],
-                             EDeviceType[nn_hparam_dict['device']],
+                             EDeviceType[nn_hparam_dict['device']] if nn_hparam_dict['device'] is not None else None,
                              nn_hparam_dict['batch_size'],
                              ECriterion[nn_hparam_dict['criterion']],
                              EOptimizer[nn_hparam_dict['optimizer']],

@@ -26,7 +26,7 @@ class MLPConfig:
         :param param_output_dim: Output size
         :type param_output_dim: int
         :param hparam_device: Used device type
-        :type hparam_device: EDeviceType
+        :type hparam_device: EDeviceType | type(None)
         :param hparam_batch_size: Size of the data batches
         :type hparam_batch_size: int
         :param hparam_criterion: Criterion (loss) function
@@ -64,7 +64,7 @@ class MLPConfig:
                          nn_param_dict['input_dim'],
                          nn_param_dict['hidden_dims'],
                          nn_param_dict['output_dim'],
-                         EDeviceType[nn_hparam_dict['device']],
+                         EDeviceType[nn_hparam_dict['device']] if nn_hparam_dict['device'] is not None else None,
                          nn_hparam_dict['batch_size'],
                          ECriterion[nn_hparam_dict['criterion']],
                          EOptimizer[nn_hparam_dict['optimizer']],
