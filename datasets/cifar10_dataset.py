@@ -2,24 +2,26 @@ import torch.utils.data as data
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
+import copy
+
 from datasets.i_dataset import IDataset
 from utils.util import create_dir_if_not_exists
 
 
 class CIFAR10Dataset(IDataset):
-    def __init__(self, dataset_path, validation_ratio, are_parameters_calculated=True, **params):
+    def __init__(self, data_path, validation_ratio, are_parameters_calculated=True, **params):
         super(CIFAR10Dataset, self).__init__()
-        self.dataset_path = dataset_path
+        self.data_path = data_path
         self.validation_ratio = validation_ratio
 
-        create_dir_if_not_exists(self.dataset_path)
+        create_dir_if_not_exists(self.data_path)
 
         random_rotation = params.get("random_rotation", 5)
         random_horizontal_flip = params.get("random_horizontal_flip", 0.5)
         crop_size = params.get("crop_size", 32)
         crop_padding = params.get("crop_padding", 2)
         if are_parameters_calculated:
-            train_data = datasets.CIFAR10(root=dataset_path, train=True, download=True)
+            train_data = datasets.CIFAR10(root=data_path, train=True, download=True)
             means = train_data.data.mean(axis=(0, 1, 2)) / 255
             stds = train_data.data.std(axis=(0, 1, 2)) / 255
         else:
@@ -38,14 +40,15 @@ class CIFAR10Dataset(IDataset):
             transforms.Normalize(mean=means, std=stds)
         ])
 
-        self.train_data = datasets.CIFAR10(dataset_path, train=True, download=True, transform=self.train_transforms)
-        self.test_data = datasets.CIFAR10(dataset_path, train=False, download=True, transform=self.test_transforms)
+        self.train_data = datasets.CIFAR10(data_path, train=True, download=True, transform=self.train_transforms)
+        self.test_data = datasets.CIFAR10(data_path, train=False, download=True, transform=self.test_transforms)
 
     def get_datasets(self):
         train_data, valid_data = data.random_split(self.train_data, [
             int(len(self.train_data) * self.validation_ratio),
             len(self.train_data) - int(len(self.train_data) * self.validation_ratio)
         ])
+        valid_data = copy.deepcopy(valid_data)
         setattr(valid_data.dataset, "transform", self.test_transforms)
 
         return train_data, valid_data, self.test_data

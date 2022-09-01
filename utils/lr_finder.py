@@ -11,8 +11,7 @@ class ExponentialLR(_LRScheduler):
     def get_lr(self):
         curr_iter = self.last_epoch
         r = curr_iter / self.num_iter
-        return [base_lr * (self.end_lr / base_lr) ** r
-                for base_lr in self.base_lrs]
+        return [base_lr * (self.end_lr / base_lr) ** r for base_lr in self.base_lrs]
 
 
 class IteratorWrapper:

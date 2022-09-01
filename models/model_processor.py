@@ -15,6 +15,9 @@ class ModelProcessor:
         self.device = device
         self.epochs = epochs
 
+        self.is_topk_calculated = config.get("is_topk_calculated", False)
+        self.top_k = config.get("top_k", 5)
+
         self.is_launched_in_notebook = config.get("is_launched_in_notebook", False)
         self.tqdm_function = tqdm if not self.is_launched_in_notebook else tqdm_notebook
 
@@ -28,6 +31,7 @@ class ModelProcessor:
     def train(self, data_loader):
         epoch_loss = 0
         epoch_acc = 0
+        epoch_topk_acc = 0
 
         self.model.train()
         for (x, y) in self.tqdm_function(data_loader, desc="Training", leave=False):
@@ -39,17 +43,20 @@ class ModelProcessor:
 
             loss = self.criterion(y_pred, y)
             acc = fn.accuracy(y_pred, y)
+            topk_acc = 0 if not self.is_topk_calculated else fn.accuracy(y_pred, y, top_k=self.top_k)
             loss.backward()
             self.optimizer.step()
 
             epoch_loss += loss.item()
             epoch_acc += acc.item()
+            epoch_topk_acc += topk_acc.item()
 
-        return epoch_loss / len(data_loader), epoch_acc / len(data_loader)
+        return epoch_loss / len(data_loader), epoch_acc / len(data_loader), epoch_topk_acc / len(data_loader)
 
     def evaluate(self, data_loader):
         epoch_loss = 0
         epoch_acc = 0
+        epoch_topk_acc = 0
 
         self.model.eval()
         with torch.no_grad():
@@ -61,11 +68,13 @@ class ModelProcessor:
 
                 loss = self.criterion(y_pred, y)
                 acc = fn.accuracy(y_pred, y)
+                topk_acc = 0 if not self.is_topk_calculated else fn.accuracy(y_pred, y, top_k=self.top_k)
 
                 epoch_loss += loss.item()
                 epoch_acc += acc.item()
+                epoch_topk_acc += topk_acc.item()
 
-        return epoch_loss / len(data_loader), epoch_acc / len(data_loader)
+        return epoch_loss / len(data_loader), epoch_acc / len(data_loader), epoch_topk_acc / len(data_loader)
 
     def process(self, train_loader, valid_loader, test_loader):
         best_valid_loss = float('inf')
@@ -74,8 +83,8 @@ class ModelProcessor:
 
             start_time = time.monotonic()
 
-            train_loss, train_acc = self.train(train_loader)
-            valid_loss, valid_acc = self.evaluate(valid_loader)
+            train_loss, train_acc, train_topk_acc = self.train(train_loader)
+            valid_loss, valid_acc, valid_topk_acc = self.evaluate(valid_loader)
 
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
@@ -86,12 +95,22 @@ class ModelProcessor:
             epoch_mins, epoch_secs = self.__epoch_time(start_time, end_time)
 
             print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
-            print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
-            print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
+            if not self.is_topk_calculated:
+                print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
+                print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
+            else:
+                print(f'\tTrain Loss: {train_loss:.3f} | '
+                      f'Train Acc @1: {train_acc * 100:.2f}% | Train Acc @{self.top_k}: {train_topk_acc * 100:.2f}%')
+                print(f'\t Val. Loss: {valid_loss:.3f} |  '
+                      f'Val. Acc @1: {valid_acc * 100:.2f}% |  Val. Acc @{self.top_k}: {valid_topk_acc * 100:.2f}%')
 
         self.model.load()
-        test_loss, test_acc = self.evaluate(test_loader)
-        print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc * 100:.2f}%')
+        test_loss, test_acc, test_topk_acc = self.evaluate(test_loader)
+        if not self.is_topk_calculated:
+            print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc * 100:.2f}%')
+        else:
+            print(f'Test Loss: {test_loss:.3f} | '
+                  f'Test Acc @1: {test_acc * 100:.2f}% | Test Acc @{self.top_k}: {test_topk_acc * 100:.2f}%')
 
     def get_predictions(self, data_loader):
         self.model.eval()

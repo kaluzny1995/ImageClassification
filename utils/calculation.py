@@ -15,6 +15,17 @@ def normalize_images(images):
     return torch.stack(list(map(lambda i: normalize(i), images)))
 
 
+def calculate_means_and_stds(data):
+    means = torch.zeros(3)
+    stds = torch.zeros(3)
+    for img, _ in data:
+        means += torch.mean(img, dim=(1, 2))
+        stds += torch.std(img, dim=(1, 2))
+    means /= len(data)
+    stds /= len(data)
+
+    return means, stds
+
 def get_filtered_images(images, conv_filter):
     images = torch.cat([i.unsqueeze(0) for i in images], dim=0).cpu()
     conv_filter = torch.FloatTensor(conv_filter).unsqueeze(0).unsqueeze(0).cpu()

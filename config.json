@@ -142,5 +142,45 @@
       "learning_rate": 5e-4,
       "epochs": 5
     }
+  },
+  "resnet": {
+    "name": "resnet50",
+    "description": "Advanced convolutional neural network with residuals.",
+    "utilized_dataset": "CUB200",
+    "ds_param": {
+      "random_rotation": 5,
+      "random_horizontal_flip": 0.5,
+      "crop_size": 224,
+      "crop_padding": 10,
+      "means": [0.485, 0.456, 0.406],
+      "stds": [0.229, 0.224, 0.225]
+    },
+    "lrf": {
+      "device": "CPU",
+      "criterion": "CE",
+      "optimizer": "ADAM",
+      "start_lr": 1e-7,
+      "end_lr": 10,
+      "num_iter": 100
+    },
+    "param": {
+      "preset": {
+        "resnet18": {"block": "basic", "n_blocks": [2, 2, 2, 2], "channels": [64, 128, 256, 512]},
+        "resnet34": {"block": "basic", "n_blocks": [3, 4, 6, 3], "channels": [64, 128, 256, 512]},
+        "resnet50": {"block": "bottleneck", "n_blocks": [3, 4, 6, 3], "channels": [64, 128, 256, 512]},
+        "resnet101": {"block": "bottleneck", "n_blocks": [3, 4, 23, 3], "channels": [64, 128, 256, 512]},
+        "resnet152": {"block": "bottleneck", "n_blocks": [3, 8, 36, 3], "channels": [64, 128, 256, 512]}
+      },
+      "output_dim": 200
+    },
+    "hparam": {
+      "device": "CPU",
+      "batch_size": 64,
+      "criterion": "CE",
+      "optimizer": "ADAM",
+      "lr_scheduler": "ONE_CYCLE_LR",
+      "learning_rate": 1e-3,
+      "epochs": 10
+    }
   }
 }

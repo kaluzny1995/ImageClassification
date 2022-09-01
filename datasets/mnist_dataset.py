@@ -2,18 +2,20 @@ import torch.utils.data as data
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
+import copy
+
 from datasets.i_dataset import IDataset
 from utils.util import create_dir_if_not_exists
 
 
 class MNISTDataset(IDataset):
-    def __init__(self, dataset_path, validation_ratio):
+    def __init__(self, data_path, validation_ratio):
         super(MNISTDataset, self).__init__()
-        self.dataset_path = dataset_path
+        self.data_path = data_path
         self.validation_ratio = validation_ratio
 
-        create_dir_if_not_exists(self.dataset_path)
-        train_data = datasets.MNIST(root=dataset_path, train=True, download=True)
+        create_dir_if_not_exists(self.data_path)
+        train_data = datasets.MNIST(root=self.data_path, train=True, download=True)
         mean = train_data.data.float().mean() / 255
         std = train_data.data.float().std() / 255
 
@@ -28,14 +30,17 @@ class MNISTDataset(IDataset):
             transforms.Normalize(mean=[mean], std=[std])
         ])
 
-        self.train_data = datasets.MNIST(root=dataset_path, train=True, download=True, transform=self.train_transforms)
-        self.test_data = datasets.MNIST(root=dataset_path, train=False, download=True, transform=self.test_transforms)
+        self.train_data = datasets.MNIST(root=self.data_path, train=True, download=True,
+                                         transform=self.train_transforms)
+        self.test_data = datasets.MNIST(root=self.data_path, train=False, download=True,
+                                        transform=self.test_transforms)
 
     def get_datasets(self):
         train_data, valid_data = data.random_split(self.train_data, [
             int(len(self.train_data) * self.validation_ratio),
             len(self.train_data) - int(len(self.train_data) * self.validation_ratio)
         ])
+        valid_data = copy.deepcopy(valid_data)
         setattr(valid_data.dataset, "transform", self.test_transforms)
 
         return train_data, valid_data, self.test_data

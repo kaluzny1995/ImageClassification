@@ -1,6 +1,5 @@
 import torch
 import torch.utils.data as data
-import torchvision
 
 import numpy as np
 import random
@@ -105,7 +104,11 @@ visualization.plot_lr_finder(lrs, losses, skip_start=10, skip_end=20)
 
 
 # Model hyperparams
-optimizer = vgg_nn_config.hparam_optimizer.value(model.parameters(), lr=vgg_nn_config.hparam_learning_rate)
+model_params = [
+    {'params': model.features.parameters(), 'lr': vgg_nn_config.hparam_learning_rate / 10},
+    {'params': model.classifier.parameters()}
+]
+optimizer = vgg_nn_config.hparam_optimizer.value(model_params, lr=vgg_nn_config.hparam_learning_rate)
 criterion = vgg_nn_config.hparam_criterion.value()
 if vgg_nn_config.hparam_device is not None:
     device = vgg_nn_config.hparam_device.value
@@ -158,7 +161,7 @@ visualization.plot_representations(intermediate_tsne_data, labels, n_examples=N_
 # Image imagination
 IMAGE_LABEL = "frog"
 best_image, best_prob = model_processor.imagine_image(test_data.classes.index(IMAGE_LABEL),
-                                                      shape=[256, 3, 32, 32], n_iterations=10_000)
+                                                      shape=[256, 3, 32, 32], n_iterations=2_000)
 print(f"Best image probability: {best_prob.item()*100:.2f}%")
 best_image = utils.calculation.normalize_images(best_image.unsqueeze(0)).squeeze(0)
 visualization.plot_image(best_image,

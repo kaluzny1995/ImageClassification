@@ -65,8 +65,8 @@ print(f"The model has {model.count_params()} trainable parameters.")
 # Model hyperparams
 optimizer = mlp_config.hparam_optimizer.value(model.parameters(), lr=mlp_config.hparam_learning_rate)
 criterion = mlp_config.hparam_criterion.value()
-if mlp_config.lrf_device is not None:
-    device = mlp_config.lrf_device.value
+if mlp_config.hparam_device is not None:
+    device = mlp_config.hparam_device.value
 else:
     device = torch.device(main_config.cuda_device.value
                           if torch.cuda.is_available() else main_config.non_cuda_device.value)

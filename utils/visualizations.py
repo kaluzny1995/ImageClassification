@@ -62,12 +62,13 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Sample of images")
         name = config.get("name", "sample_images")
+        figsize = config.get("figsize", (10, 10))
 
         n_images = len(images)
         rows = int(np.sqrt(n_images))
         cols = int(np.sqrt(n_images))
 
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(rows * cols):
             ax = fig.add_subplot(rows, cols, i + 1)
@@ -92,10 +93,11 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Convolutionally filtered images")
         name = config.get("name", "filtered_images")
+        figsize = config.get("figsize", (20, 5))
 
         n_images = images.shape[0]
 
-        fig = plt.figure(figsize=(20, 5))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(n_images):
             ax = fig.add_subplot(2, n_images, i + 1)
@@ -124,10 +126,11 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Pooled images")
         name = config.get("name", "pooled_images")
+        figsize = config.get("figsize", (20, 5))
 
         n_images = images.shape[0]
 
-        fig = plt.figure(figsize=(20, 5))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(n_images):
             ax = fig.add_subplot(2, n_images, i + 1)
@@ -160,6 +163,7 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Optimal learning rate finding")
         name = config.get("name", "optimal_lr_finding")
+        figsize = config.get("figsize", (16, 8))
 
         if skip_end == 0:
             lrs = lrs[skip_start:]
@@ -168,7 +172,7 @@ class Visualization:
             lrs = lrs[skip_start:-skip_end]
             losses = losses[skip_start:-skip_end]
 
-        fig = plt.figure(figsize=(16, 8))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         ax = fig.add_subplot(1, 1, 1)
         ax.plot(lrs, losses)
@@ -193,12 +197,14 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Confusion matrix")
         name = config.get("name", "confusion_matrix")
+        figsize = config.get("figsize", (10, 10))
+        labels_range = config.get("labels_range", 10)
 
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         ax = fig.add_subplot(1, 1, 1)
         cm = metrics.confusion_matrix(labels, pred_labels)
-        cm = metrics.ConfusionMatrixDisplay(cm, display_labels=range(10))
+        cm = metrics.ConfusionMatrixDisplay(cm, display_labels=range(labels_range))
         cm.plot(values_format='d', cmap='Blues', ax=ax)
 
         if self.is_saved:
@@ -218,11 +224,12 @@ class Visualization:
         title = config.get("title", "Most incorrect classifications")
         name = config.get("name", "most_incorrect")
         class_names = config.get("class_names", None)
+        figsize = config.get("figsize", (25, 20))
 
         rows = int(np.sqrt(n_images))
         cols = int(np.sqrt(n_images))
 
-        fig = plt.figure(figsize=(25, 20))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(rows * cols):
             ax = fig.add_subplot(rows, cols, i + 1)
@@ -255,11 +262,12 @@ class Visualization:
         title = config.get("title", "Dataset representation")
         name = config.get("name", "dataset_representation")
         n_examples = config.get("n_examples", None)
+        figsize = config.get("figsize", (10, 10))
 
         if n_examples is not None:
             data = data[:n_examples]
             labels = labels[:n_examples]
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         ax = fig.add_subplot(111)
         scatter = ax.scatter(data[:, 0], data[:, 1], c=labels, cmap='tab10')
@@ -283,11 +291,12 @@ class Visualization:
         title = config.get("title", "Layer weights")
         name = config.get("name", "layer_weights")
         dims = config.get("dims", (10, 10))
+        figsize = config.get("figsize", (20, 10))
 
         rows = int(np.sqrt(n_weights))
         cols = int(np.sqrt(n_weights))
 
-        fig = plt.figure(figsize=(20, 10))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(rows * cols):
             ax = fig.add_subplot(rows, cols, i + 1)
@@ -310,11 +319,12 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Convolutionally filtered images by neural network")
         name = config.get("name", "many_filtered_images")
+        figsize = config.get("figsize", (20, 10))
 
         n_images = images.shape[0]
         n_filters = filtered_images.shape[1]
 
-        fig = plt.figure(figsize=(20, 10))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(n_images):
 
@@ -344,11 +354,12 @@ class Visualization:
         mpl.rcParams.update(mpl.rcParamsDefault)
         title = config.get("title", "Convolutional filters trained by neural network")
         name = config.get("name", "trained_filters")
+        figsize = config.get("figsize", (20, 10))
 
         conv_filters = conv_filters.cpu()
         n_filters = conv_filters.shape[0]
 
-        fig = plt.figure(figsize=(20, 10))
+        fig = plt.figure(figsize=figsize)
         fig.suptitle(title)
         for i in range(n_filters):
             ax = fig.add_subplot(1, n_filters, i + 1)

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torchvision import models
 
 from models.dict_pretrained_model import pretrained_models_dict
 from utils.util import create_dir_if_not_exists
