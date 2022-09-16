@@ -6,6 +6,7 @@ import random
 
 from config.main_config import MainConfig
 from config.lenet_config import LeNetConfig
+import factories.enums
 from utils.visualizations import Visualization
 import utils.calculation
 from models.lenet import LeNet
@@ -26,7 +27,8 @@ print(f"LeNet NN config: {lenet_config.to_dict()}")
 
 
 # Datasets
-mnist_dataset = lenet_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
+mnist_dataset = factories.enums.get_dataset(lenet_config.utilized_dataset)(main_config.paths.data,
+                                                                           main_config.tv_split_ratio)
 train_data, valid_data, test_data = mnist_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
 print(f'Number of validation examples: {len(valid_data)}')
@@ -34,7 +36,7 @@ print(f'Number of testing examples: {len(test_data)}')
 
 
 # Visualizer
-visualization = Visualization(main_config.path_storage_visualization,
+visualization = Visualization(main_config.paths.visualizations,
                               lenet_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
@@ -91,37 +93,33 @@ visualization.plot_pool(*utils.calculation.get_pooled_images(images, "mean", 3),
 
 
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=lenet_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=lenet_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=lenet_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=lenet_config.hparam.batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=lenet_config.hparam.batch_size)
+test_loader = data.DataLoader(test_data, batch_size=lenet_config.hparam.batch_size)
 
 
 # Model definition
-model = LeNet(lenet_config.param_in_channels,
-              lenet_config.param_mid_channels,
-              lenet_config.param_out_channels,
-              lenet_config.param_kernel_size,
-              lenet_config.param_pool_kernel_size,
-              lenet_config.param_input_dim,
-              lenet_config.param_hidden_dims,
-              lenet_config.param_output_dim,
-              main_config.path_storage_models,
+model = LeNet(lenet_config.param.ft.in_out_channels,
+              lenet_config.param.ft.kernel_size,
+              lenet_config.param.ft.pool_kernel_size,
+              lenet_config.param.clf.dims,
+              main_config.paths.models,
               lenet_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
 # Model hyperparams
-optimizer = lenet_config.hparam_optimizer.value(model.parameters(), lr=lenet_config.hparam_learning_rate)
-criterion = lenet_config.hparam_criterion.value()
-if lenet_config.hparam_device is not None:
-    device = lenet_config.hparam_device.value
+optimizer = factories.enums.get_optimizer(lenet_config.hparam.optimizer)(model.parameters(),
+                                                                         lr=lenet_config.hparam.learning_rate)
+criterion = factories.enums.get_criterion(lenet_config.hparam.criterion)()
+if lenet_config.hparam.device is not None:
+    device = lenet_config.hparam.device
 else:
-    device = torch.device(main_config.cuda_device.value
-                          if torch.cuda.is_available() else main_config.non_cuda_device.value)
+    device = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, lenet_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, lenet_config.hparam.epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)

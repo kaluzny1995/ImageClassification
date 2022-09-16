@@ -1,9 +1,7 @@
-import torch.optim as optim
-
 from enum import Enum
 
 
-class EOptimizer(Enum):
-    ADAM = optim.Adam
-    ADAMAX = optim.Adamax
-    ADAGRAD = optim.Adagrad
+class EOptimizer(str, Enum):
+    ADAM = "adam"
+    ADAMAX = "adamax"
+    ADAGRAD = "adagrad"

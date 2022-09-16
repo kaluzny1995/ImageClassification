@@ -7,6 +7,7 @@ import copy
 
 from config.main_config import MainConfig
 from config.vgg_config import VGGConfig
+import factories.enums
 from utils.visualizations import Visualization
 import utils.calculation
 from models.vgg import VGG
@@ -28,15 +29,15 @@ print(f"VGG NN config: {vgg_nn_config.to_dict()}")
 
 
 # Datasets
-cifar10_dataset = vgg_nn_config.utilized_dataset.value(
-    main_config.path_data, main_config.tv_split_ratio,
+cifar10_dataset = factories.enums.get_dataset(vgg_nn_config.utilized_dataset)(
+    main_config.paths.data, main_config.tv_split_ratio,
     are_parameters_calculated=False,
-    ds_param_random_rotation=vgg_nn_config.ds_param_random_rotation,
-    ds_param_random_horizontal_flip=vgg_nn_config.ds_param_random_horizontal_flip,
-    ds_param_crop_size=vgg_nn_config.ds_param_crop_size,
-    ds_param_crop_padding=vgg_nn_config.ds_param_crop_padding,
-    ds_param_means=vgg_nn_config.ds_param_means,
-    ds_param_stds=vgg_nn_config.ds_param_stds
+    ds_param_random_rotation=vgg_nn_config.ds_param.random_rotation,
+    ds_param_random_horizontal_flip=vgg_nn_config.ds_param.random_horizontal_flip,
+    ds_param_crop_size=vgg_nn_config.ds_param.crop_size,
+    ds_param_crop_padding=vgg_nn_config.ds_param.crop_padding,
+    ds_param_means=vgg_nn_config.ds_param.means,
+    ds_param_stds=vgg_nn_config.ds_param.stds
 )
 train_data, valid_data, test_data = cifar10_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
@@ -45,7 +46,7 @@ print(f'Number of testing examples: {len(test_data)}')
 
 
 # Visualizer
-visualization = Visualization(main_config.path_storage_visualization,
+visualization = Visualization(main_config.paths.visualizations,
                               vgg_nn_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
@@ -61,22 +62,22 @@ visualization.plot_images(utils.calculation.normalize_images(images), labels,
 
 
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=vgg_nn_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=vgg_nn_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=vgg_nn_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=vgg_nn_config.hparam.batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=vgg_nn_config.hparam.batch_size)
+test_loader = data.DataLoader(test_data, batch_size=vgg_nn_config.hparam.batch_size)
 
 
 # Model definition
-model = VGG(vgg_nn_config.param_preset,
-            vgg_nn_config.param_ft_in_channels,
-            vgg_nn_config.param_ft_kernel_size,
-            vgg_nn_config.param_ft_pool_kernel_size,
-            vgg_nn_config.param_ft_padding,
-            vgg_nn_config.param_ft_is_batchnorm_used,
-            vgg_nn_config.param_avg_pool_size,
-            vgg_nn_config.param_clf_dims,
-            vgg_nn_config.param_clf_dropout,
-            main_config.path_storage_models,
+model = VGG(vgg_nn_config.param.preset,
+            vgg_nn_config.param.ft.in_out_channels[0][0],
+            vgg_nn_config.param.ft.kernel_size,
+            vgg_nn_config.param.ft.pool_kernel_size,
+            vgg_nn_config.param.ft.padding,
+            vgg_nn_config.param.ft.is_batchnorm_used,
+            vgg_nn_config.param.avg_pool_size,
+            vgg_nn_config.param.clf.dims,
+            vgg_nn_config.param.clf.dropout,
+            main_config.paths.models,
             vgg_nn_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
@@ -84,42 +85,42 @@ print(f"The model has {model.count_params()} trainable parameters.")
 # Optimal learning rate finding
 model_for_lrf = copy.deepcopy(model)
 
-optimizer_for_lrf = vgg_nn_config.lrf_optimizer.value(model_for_lrf.parameters(), lr=vgg_nn_config.lrf_start_lr)
-criterion_for_lrf = vgg_nn_config.lrf_criterion.value()
-if vgg_nn_config.lrf_device is not None:
-    device_for_lrf = vgg_nn_config.lrf_device.value
+optimizer_for_lrf = factories.enums.get_optimizer(vgg_nn_config.lrf.optimizer)(model_for_lrf.parameters(),
+                                                                               lr=vgg_nn_config.lrf.start_lr)
+criterion_for_lrf = factories.enums.get_criterion(vgg_nn_config.lrf.criterion)()
+if vgg_nn_config.lrf.device is not None:
+    device_for_lrf = vgg_nn_config.lrf.device
 else:
-    device_for_lrf = torch.device(main_config.cuda_device.value
-                                  if torch.cuda.is_available() else main_config.non_cuda_device.value)
+    device_for_lrf = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model_for_lrf = model_for_lrf.to(device_for_lrf)
 criterion_for_lrf = criterion_for_lrf.to(device_for_lrf)
 
 lr_finder = LRFinder(model_for_lrf, optimizer_for_lrf, criterion_for_lrf, device_for_lrf,
-                     main_config.path_storage_models, vgg_nn_config.name)
+                     main_config.paths.models, vgg_nn_config.name)
 lrs, losses = lr_finder.range_test(train_loader,
-                                   end_lr=vgg_nn_config.lrf_end_lr,
-                                   num_iter=vgg_nn_config.lrf_num_iter)
+                                   end_lr=vgg_nn_config.lrf.end_lr,
+                                   num_iter=vgg_nn_config.lrf.num_iter)
 
 visualization.plot_lr_finder(lrs, losses, skip_start=10, skip_end=20)
 
 
 # Model hyperparams
 model_params = [
-    {'params': model.features.parameters(), 'lr': vgg_nn_config.hparam_learning_rate / 10},
+    {'params': model.features.parameters(), 'lr': vgg_nn_config.hparam.learning_rate / 10},
     {'params': model.classifier.parameters()}
 ]
-optimizer = vgg_nn_config.hparam_optimizer.value(model_params, lr=vgg_nn_config.hparam_learning_rate)
-criterion = vgg_nn_config.hparam_criterion.value()
-if vgg_nn_config.hparam_device is not None:
-    device = vgg_nn_config.hparam_device.value
+optimizer = factories.enums.get_optimizer(vgg_nn_config.hparam.optimizer)(model.parameters(),
+                                                                          lr=vgg_nn_config.hparam.learning_rate)
+criterion = factories.enums.get_criterion(vgg_nn_config.hparam.criterion)()
+if vgg_nn_config.hparam.device is not None:
+    device = vgg_nn_config.hparam.device
 else:
-    device = torch.device(main_config.cuda_device.value
-                          if torch.cuda.is_available() else main_config.non_cuda_device.value)
+    device = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, vgg_nn_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, vgg_nn_config.hparam.epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)

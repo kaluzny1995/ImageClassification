@@ -6,15 +6,11 @@ from utils.util import create_dir_if_not_exists
 
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim, save_path, model_name):
+    def __init__(self, dims, save_path, model_name):
         """
         MLP - dense neural network model
-        :param input_dim: Input dimension
-        :type input_dim: int
-        :param hidden_dims: Hidden dimensions
-        :type hidden_dims: List[int]
-        :param output_dim: Output dimension
-        :type output_dim: int
+        :param dims: Dense layers dimensions
+        :type dims: List[Tuple[int, int]]
         :param save_path: Base path for model saving
         :type save_path: str
         :param model_name: Name of the model
@@ -22,9 +18,9 @@ class MLP(nn.Module):
         """
         super().__init__()
 
-        self.input_fc = nn.Linear(input_dim, hidden_dims[0])
-        self.hidden_fc = nn.Linear(hidden_dims[0], hidden_dims[-1])
-        self.output_fc = nn.Linear(hidden_dims[-1], output_dim)
+        self.input_fc = nn.Linear(*dims[0])
+        self.hidden_fc = nn.Linear(*dims[1])
+        self.output_fc = nn.Linear(*dims[-1])
 
         self.save_path = save_path
         self.model_name = model_name

@@ -1,18 +1,22 @@
 {
+  "base": {
+    "name": "base",
+    "description": "Basic description"
+  },
   "main": {
     "name": "main",
-    "description": "The main configuration - paths and common settings. Default device - CUDA.",
-    "path": {
+    "description": "The main configuration - paths and common settings. Default device - cuda.",
+    "paths": {
+      "name": "paths",
+      "description": "The config of project paths.",
       "root": ".",
       "data": ".data",
-      "storage": {
-        "visualizations": ".storage/vis",
-        "models": ".storage/models"
-      }
+      "visualizations": ".storage/vis",
+      "models": ".storage/models"
     },
     "random_seed": 1234,
-    "cuda_device": "CUDA",
-    "non_cuda_device": "CPU",
+    "cuda_device": "cuda",
+    "non_cuda_device": "cpu",
     "tt_split_ratio": 0.8,
     "tv_split_ratio": 0.9,
     "is_visualization_saved": true,
@@ -22,17 +26,17 @@
   "mlp": {
     "name": "mlp",
     "description": "A simple dense (fully connected) layers neural network.",
-    "utilized_dataset": "MNIST",
+    "utilized_dataset": "mnist",
     "param": {
-      "input_dim": 784,
-      "hidden_dims": [250, 100],
-      "output_dim": 10
+      "clf": {
+        "dims": [[784, 250], [250, 100], [100, 10]]
+      }
     },
     "hparam": {
       "device": null,
       "batch_size": 64,
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "criterion": "ce",
+      "optimizer": "adam",
       "learning_rate": 0.001,
       "epochs": 10
     }
@@ -40,22 +44,22 @@
   "lenet": {
     "name": "lenet",
     "description": "A simple convolutional (+ dense) layers neural network.",
-    "utilized_dataset": "MNIST",
+    "utilized_dataset": "mnist",
     "param": {
-      "in_channels": 1,
-      "mid_channels": 6,
-      "out_channels": 16,
-      "kernel_size": 5,
-      "pool_kernel_size": 2,
-      "input_dim": 256,
-      "hidden_dims": [120, 84],
-      "output_dim": 10
+      "ft": {
+        "in_out_channels": [[1, 6], [6, 16]],
+        "kernel_size": 5,
+        "pool_kernel_size": 2
+      },
+      "clf": {
+        "dims": [[256, 120], [120, 84], [84, 10]]
+      }
     },
     "hparam": {
       "device": null,
       "batch_size": 64,
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "criterion": "ce",
+      "optimizer": "adam",
       "learning_rate": 0.001,
       "epochs": 20
     }
@@ -63,11 +67,11 @@
   "alexnet": {
     "name": "alexnet",
     "description": "An AlexNet convolutional neural network model.",
-    "utilized_dataset": "CIFAR10",
+    "utilized_dataset": "cifar10",
     "lrf": {
       "device": null,
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "criterion": "ce",
+      "optimizer": "adam",
       "start_lr": 1e-7,
       "end_lr": 10,
       "num_iter": 100
@@ -88,8 +92,8 @@
     "hparam": {
       "device": null,
       "batch_size": 256,
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "criterion": "ce",
+      "optimizer": "adam",
       "learning_rate": 0.001,
       "epochs": 25
     }
@@ -97,7 +101,7 @@
   "vgg": {
     "name": "vgg11",
     "description": "A VGG convolutional neural network model.",
-    "utilized_dataset": "CIFAR10",
+    "utilized_dataset": "cifar10",
     "ds_param": {
       "random_rotation": 5,
       "random_horizontal_flip": 0.5,
@@ -107,9 +111,9 @@
       "stds": [0.229, 0.224, 0.225]
     },
     "lrf": {
-      "device": "CPU",
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "device": "cpu",
+      "criterion": "ce",
+      "optimizer": "adam",
       "start_lr": 1e-7,
       "end_lr": 10,
       "num_iter": 100
@@ -122,7 +126,7 @@
         "vgg19": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"]
       },
       "ft": {
-        "in_channels": 3,
+        "in_out_channels": [[3, -1]],
         "kernel_size": 3,
         "pool_kernel_size": 2,
         "padding": 1,
@@ -135,10 +139,10 @@
       }
     },
     "hparam": {
-      "device": "CPU",
+      "device": "cpu",
       "batch_size": 128,
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "criterion": "ce",
+      "optimizer": "adam",
       "learning_rate": 5e-4,
       "epochs": 5
     }
@@ -146,7 +150,7 @@
   "resnet": {
     "name": "resnet50",
     "description": "Advanced convolutional neural network with residuals.",
-    "utilized_dataset": "CUB200",
+    "utilized_dataset": "cub200",
     "ds_param": {
       "random_rotation": 5,
       "random_horizontal_flip": 0.5,
@@ -156,9 +160,9 @@
       "stds": [0.229, 0.224, 0.225]
     },
     "lrf": {
-      "device": "CPU",
-      "criterion": "CE",
-      "optimizer": "ADAM",
+      "device": "cpu",
+      "criterion": "ce",
+      "optimizer": "adam",
       "start_lr": 1e-7,
       "end_lr": 10,
       "num_iter": 100
@@ -171,14 +175,16 @@
         "resnet101": {"block": "bottleneck", "n_blocks": [3, 4, 23, 3], "channels": [64, 128, 256, 512]},
         "resnet152": {"block": "bottleneck", "n_blocks": [3, 8, 36, 3], "channels": [64, 128, 256, 512]}
       },
-      "output_dim": 200
+      "clf": {
+        "dims": [[-1, 200]]
+      }
     },
     "hparam": {
-      "device": "CPU",
+      "device": "cpu",
       "batch_size": 64,
-      "criterion": "CE",
-      "optimizer": "ADAM",
-      "lr_scheduler": "ONE_CYCLE_LR",
+      "criterion": "ce",
+      "optimizer": "adam",
+      "lr_scheduler": "one_cycle_lr",
       "learning_rate": 1e-3,
       "epochs": 10
     }

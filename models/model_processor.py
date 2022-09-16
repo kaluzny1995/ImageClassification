@@ -49,7 +49,7 @@ class ModelProcessor:
 
             epoch_loss += loss.item()
             epoch_acc += acc.item()
-            epoch_topk_acc += topk_acc.item()
+            epoch_topk_acc += 0 if not self.is_topk_calculated else topk_acc.item()
 
         return epoch_loss / len(data_loader), epoch_acc / len(data_loader), epoch_topk_acc / len(data_loader)
 
@@ -72,7 +72,7 @@ class ModelProcessor:
 
                 epoch_loss += loss.item()
                 epoch_acc += acc.item()
-                epoch_topk_acc += topk_acc.item()
+                epoch_topk_acc += 0 if not self.is_topk_calculated else topk_acc.item()
 
         return epoch_loss / len(data_loader), epoch_acc / len(data_loader), epoch_topk_acc / len(data_loader)
 

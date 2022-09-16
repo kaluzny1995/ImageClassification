@@ -1,9 +1,7 @@
-import torch.nn as nn
-
 from enum import Enum
 
 
-class ECriterion(Enum):
-    CE = nn.CrossEntropyLoss
-    BCE = nn.BCELoss
-    BCEL = nn.BCEWithLogitsLoss
+class ECriterion(str, Enum):
+    CE = "ce"
+    BCE = "bce"
+    BCEL = "bcel"

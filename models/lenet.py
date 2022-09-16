@@ -6,27 +6,19 @@ from utils.util import create_dir_if_not_exists
 
 
 class LeNet(nn.Module):
-    def __init__(self, in_channels, mid_channels, out_channels, kernel_size, pool_kernel_size,
-                 input_dim, hidden_dims, output_dim,
+    def __init__(self, in_out_channels, kernel_size, pool_kernel_size,
+                 dims,
                  save_path, model_name):
         """
         LeNet - convolutional neural network model
-        :param in_channels: Convolutional layer input channels
-        :type in_channels: int
-        :param mid_channels: Convolutional layer middle channels
-        :type mid_channels: int
-        :param out_channels: Convolutional layer output channels
-        :type out_channels: int
+        :param in_out_channels: Convolutional layers channels
+        :type in_out_channels: List[List[int]]
         :param kernel_size: Convolutional layer kernel size
         :type kernel_size: int
         :param pool_kernel_size: Pooling layer kernel size
         :type pool_kernel_size: int
-        :param input_dim: Dense layer input dimension
-        :type input_dim: int
-        :param hidden_dims: Dense layer hidden dimensions
-        :type hidden_dims: List[int]
-        :param output_dim: Dense layer output dimension
-        :type output_dim: int
+        :param dims: Dense layers dimensions
+        :type dims: List[List[int]]
         :param save_path: Base path for model saving
         :type save_path: str
         :param model_name: Name of the model
@@ -34,26 +26,17 @@ class LeNet(nn.Module):
         """
         super().__init__()
 
-        self.in_channels = in_channels
-        self.mid_channels = mid_channels
-        self.out_channels = out_channels
+        self.in_out_channels = in_out_channels
         self.kernel_size = kernel_size
         self.pool_kernel_size = pool_kernel_size
-        self.input_dim = input_dim
-        self.hidden_dims = hidden_dims
-        self.output_dim = output_dim
+        self.dims = dims
 
-        self.conv1 = nn.Conv2d(in_channels=in_channels,
-                               out_channels=mid_channels,
-                               kernel_size=kernel_size)
+        self.conv1 = nn.Conv2d(*in_out_channels[0], kernel_size=kernel_size)
+        self.conv2 = nn.Conv2d(*in_out_channels[-1], kernel_size=kernel_size)
 
-        self.conv2 = nn.Conv2d(in_channels=mid_channels,
-                               out_channels=out_channels,
-                               kernel_size=kernel_size)
-
-        self.fc_1 = nn.Linear(input_dim, hidden_dims[0])
-        self.fc_2 = nn.Linear(hidden_dims[0], hidden_dims[-1])
-        self.fc_3 = nn.Linear(hidden_dims[-1], output_dim)
+        self.fc_1 = nn.Linear(*dims[0])
+        self.fc_2 = nn.Linear(*dims[1])
+        self.fc_3 = nn.Linear(*dims[-1])
 
         self.save_path = save_path
         self.model_name = model_name

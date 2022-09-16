@@ -7,6 +7,7 @@ import copy
 
 from config.main_config import MainConfig
 from config.alexnet_config import AlexNetConfig
+import factories.enums
 from utils.visualizations import Visualization
 import utils.calculation
 from models.alexnet import AlexNet
@@ -30,7 +31,8 @@ print(f"AlexNet NN config: {alexnet_nn_config.to_dict()}")
 
 
 # Datasets
-cifar10_dataset = alexnet_nn_config.utilized_dataset.value(main_config.path_data, main_config.tv_split_ratio)
+cifar10_dataset = factories.enums.get_dataset(alexnet_nn_config.utilized_dataset)(main_config.paths.data,
+                                                                                  main_config.tv_split_ratio)
 train_data, valid_data, test_data = cifar10_dataset.get_datasets()
 print(f'Number of training examples: {len(train_data)}')
 print(f'Number of validation examples: {len(valid_data)}')
@@ -38,7 +40,7 @@ print(f'Number of testing examples: {len(test_data)}')
 
 
 # Visualizer
-visualization = Visualization(main_config.path_storage_visualization,
+visualization = Visualization(main_config.paths.visualizations,
                               alexnet_nn_config.name,
                               is_saved=main_config.is_visualization_saved,
                               is_shown=main_config.is_visualization_shown)
@@ -91,20 +93,20 @@ visualization.plot_pool(utils.calculation.normalize_images(p_images), utils.calc
 
 
 # Data loaders
-train_loader = data.DataLoader(train_data, shuffle=True, batch_size=alexnet_nn_config.hparam_batch_size)
-valid_loader = data.DataLoader(valid_data, batch_size=alexnet_nn_config.hparam_batch_size)
-test_loader = data.DataLoader(test_data, batch_size=alexnet_nn_config.hparam_batch_size)
+train_loader = data.DataLoader(train_data, shuffle=True, batch_size=alexnet_nn_config.hparam.batch_size)
+valid_loader = data.DataLoader(valid_data, batch_size=alexnet_nn_config.hparam.batch_size)
+test_loader = data.DataLoader(test_data, batch_size=alexnet_nn_config.hparam.batch_size)
 
 
 # Model definition
-model = AlexNet(alexnet_nn_config.param_ft_in_out_channels,
-                alexnet_nn_config.param_ft_kernel_size,
-                alexnet_nn_config.param_ft_pool_kernel_size,
-                alexnet_nn_config.param_ft_stride,
-                alexnet_nn_config.param_ft_padding,
-                alexnet_nn_config.param_clf_dims,
-                alexnet_nn_config.param_clf_dropout,
-                main_config.path_storage_models,
+model = AlexNet(alexnet_nn_config.param.ft.in_out_channels,
+                alexnet_nn_config.param.ft.kernel_size,
+                alexnet_nn_config.param.ft.pool_kernel_size,
+                alexnet_nn_config.param.ft.stride,
+                alexnet_nn_config.param.ft.padding,
+                alexnet_nn_config.param.clf.dims,
+                alexnet_nn_config.param.clf.dropout,
+                main_config.paths.models,
                 alexnet_nn_config.name)
 print(f"The model has {model.count_params()} trainable parameters.")
 
@@ -112,38 +114,38 @@ print(f"The model has {model.count_params()} trainable parameters.")
 # Optimal learning rate finding
 model_for_lrf = copy.deepcopy(model)
 
-optimizer_for_lrf = alexnet_nn_config.lrf_optimizer.value(model_for_lrf.parameters(), lr=alexnet_nn_config.lrf_start_lr)
-criterion_for_lrf = alexnet_nn_config.lrf_criterion.value()
-if alexnet_nn_config.lrf_device is not None:
-    device_for_lrf = alexnet_nn_config.lrf_device.value
+optimizer_for_lrf = factories.enums.get_optimizer(alexnet_nn_config.lrf.optimizer)(model_for_lrf.parameters(),
+                                                                                   lr=alexnet_nn_config.lrf.start_lr)
+criterion_for_lrf = factories.enums.get_criterion(alexnet_nn_config.lrf.criterion)()
+if alexnet_nn_config.lrf.device is not None:
+    device_for_lrf = alexnet_nn_config.lrf.device
 else:
-    device_for_lrf = torch.device(main_config.cuda_device.value
-                                  if torch.cuda.is_available() else main_config.non_cuda_device.value)
+    device_for_lrf = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model_for_lrf = model_for_lrf.to(device_for_lrf)
 criterion_for_lrf = criterion_for_lrf.to(device_for_lrf)
 
 lr_finder = LRFinder(model_for_lrf, optimizer_for_lrf, criterion_for_lrf, device_for_lrf,
-                     main_config.path_storage_models, alexnet_nn_config.name)
+                     main_config.paths.models, alexnet_nn_config.name)
 lrs, losses = lr_finder.range_test(train_loader,
-                                   end_lr=alexnet_nn_config.lrf_end_lr,
-                                   num_iter=alexnet_nn_config.lrf_num_iter)
+                                   end_lr=alexnet_nn_config.lrf.end_lr,
+                                   num_iter=alexnet_nn_config.lrf.num_iter)
 
 visualization.plot_lr_finder(lrs, losses)
 
 
 # Model hyperparams
-optimizer = alexnet_nn_config.hparam_optimizer.value(model.parameters(), lr=alexnet_nn_config.hparam_learning_rate)
-criterion = alexnet_nn_config.hparam_criterion.value()
-if alexnet_nn_config.lrf_device is not None:
-    device = alexnet_nn_config.lrf_device.value
+optimizer = factories.enums.get_optimizer(alexnet_nn_config.hparam.optimizer)(model.parameters(),
+                                                                              lr=alexnet_nn_config.hparam.learning_rate)
+criterion = factories.enums.get_criterion(alexnet_nn_config.hparam.criterion)()
+if alexnet_nn_config.hparam.device is not None:
+    device = alexnet_nn_config.hparam.device
 else:
-    device = torch.device(main_config.cuda_device.value
-                          if torch.cuda.is_available() else main_config.non_cuda_device.value)
+    device = torch.device(main_config.cuda_device if torch.cuda.is_available() else main_config.non_cuda_device)
 model = model.to(device)
 criterion = criterion.to(device)
 
 # Model processor
-model_processor = ModelProcessor(model, criterion, optimizer, device, alexnet_nn_config.hparam_epochs,
+model_processor = ModelProcessor(model, criterion, optimizer, device, alexnet_nn_config.hparam.epochs,
                                  is_launched_in_notebook=main_config.is_launched_in_notebook)
 # Training
 model_processor.process(train_loader, valid_loader, test_loader)
